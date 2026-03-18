@@ -3,6 +3,9 @@
 .AppleDouble
 .LSOverride
 
+# AI
+.claude
+
 /test/
 /tests/
 /tasks/
