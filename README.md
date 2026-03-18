@@ -1,6 +1,10 @@
-# fastapi.nvim
+<h1 align="center">
+    <img src="assets/nimble-logo.png" width="300" alt="Bucky logo"/>
+    <br/>
+    <sub>Keyboard-first, dual-panel TUI file manager for cloud and remote storage</sub>
+</h1>
 
-A Neovim plugin for exploring, navigating, and testing [FastAPI](https://fastapi.tiangolo.com/) applications. Browse your routes in a sidebar explorer, jump to handlers via fuzzy picker, and see CodeLens annotations linking test client calls to their route definitions.
+A Neovim plugin for exploring, navigating, and testing API applications. Browse your routes in a sidebar explorer, jump to handlers via fuzzy picker, and see CodeLens annotations linking test client calls to their route definitions.
 
 ## Features
 
