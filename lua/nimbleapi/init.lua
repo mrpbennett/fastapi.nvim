@@ -64,6 +64,7 @@ function M.setup(opts)
     { km.pick,     function() M.pick() end,      "NimbleAPI: route picker" },
     { km.refresh,  function() M.refresh() end,   "NimbleAPI: refresh routes" },
     { km.codelens, function() M.codelens() end,  "NimbleAPI: toggle codelens" },
+    { km.test,     function() M.test() end,     "NimbleAPI: test route" },
   }
   for _, b in ipairs(binds) do
     if b[1] then
@@ -102,6 +103,46 @@ function M.codelens()
   else
     codelens.detach(vim.api.nvim_get_current_buf())
     vim.notify("NimbleAPI codelens disabled", vim.log.levels.INFO)
+  end
+end
+
+function M.test()
+  ensure_setup()
+  local cache = require("nimbleapi.cache")
+  local routes = cache.get_all_routes()
+  if not routes or #routes == 0 then
+    vim.notify("NimbleAPI: no routes found — run :NimbleAPI refresh", vim.log.levels.WARN)
+    return
+  end
+
+  -- Try to resolve route from current cursor position
+  local current_file = vim.fs.normalize(vim.api.nvim_buf_get_name(0))
+  local current_line = vim.api.nvim_win_get_cursor(0)[1]
+  local best_match = nil
+  for _, route in ipairs(routes) do
+    if vim.fs.normalize(route.file or "") == current_file then
+      if route.line and route.line <= current_line then
+        if not best_match or route.line > best_match.line then
+          best_match = route
+        end
+      end
+    end
+  end
+
+  if best_match then
+    require("nimbleapi.http").test_route(best_match)
+  else
+    -- Fall back to picker
+    vim.ui.select(routes, {
+      prompt = "Select route to test:",
+      format_item = function(route)
+        return route.method .. " " .. route.path .. " → " .. (route.func or "") .. "()"
+      end,
+    }, function(route)
+      if route then
+        require("nimbleapi.http").test_route(route)
+      end
+    end)
   end
 end
 

@@ -52,6 +52,21 @@ function M.pick(opts)
         vim.cmd("normal! zz")
       end
     end,
+    actions = {
+      test = function(picker, item)
+        picker:close()
+        if item then
+          require("nimbleapi.http").test_route(item.route)
+        end
+      end,
+    },
+    win = {
+      input = {
+        keys = {
+          ["<C-t>"] = { "test", mode = { "n", "i" } },
+        },
+      },
+    },
   }, opts or {}))
 end
 

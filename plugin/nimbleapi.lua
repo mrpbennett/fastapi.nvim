@@ -19,6 +19,9 @@ local subcommands = {
   info = function()
     require("nimbleapi").info()
   end,
+  test = function()
+    require("nimbleapi").test()
+  end,
 }
 
 vim.api.nvim_create_user_command("NimbleAPI", function(args)

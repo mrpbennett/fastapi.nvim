@@ -63,7 +63,7 @@ function M.pick(opts)
       }),
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
-      attach_mappings = function(prompt_bufnr, _)
+      attach_mappings = function(prompt_bufnr, map)
         actions.select_default:replace(function()
           actions.close(prompt_bufnr)
           local selection = action_state.get_selected_entry()
@@ -73,6 +73,18 @@ function M.pick(opts)
             vim.cmd("normal! zz")
           end
         end)
+
+        local function test_route()
+          local selection = action_state.get_selected_entry()
+          actions.close(prompt_bufnr)
+          if selection then
+            require("nimbleapi.http").test_route(selection.value)
+          end
+        end
+
+        map("i", "<C-t>", test_route)
+        map("n", "t", test_route)
+
         return true
       end,
     })

@@ -14,6 +14,7 @@ local M = {}
 ---@field pick string|false
 ---@field refresh string|false
 ---@field codelens string|false
+---@field test string|false
 
 ---@class NimbleApiCodelensConfig
 ---@field enabled boolean
@@ -23,6 +24,10 @@ local M = {}
 ---@field enabled boolean
 ---@field debounce_ms integer
 
+---@class NimbleApiHttpConfig
+---@field base_url string
+---@field split "vertical"|"horizontal"|"tab"
+
 ---@class NimbleApiConfig
 ---@field provider string|nil
 ---@field explorer NimbleApiExplorerConfig
@@ -30,6 +35,7 @@ local M = {}
 ---@field keymaps NimbleApiKeymapsConfig
 ---@field codelens NimbleApiCodelensConfig
 ---@field watch NimbleApiWatchConfig
+---@field http NimbleApiHttpConfig
 
 ---@type NimbleApiConfig
 M.defaults = {
@@ -47,6 +53,11 @@ M.defaults = {
     pick     = "<leader>Np",
     refresh  = "<leader>Nr",
     codelens = "<leader>Nc",
+    test     = "<leader>Ne",
+  },
+  http = {
+    base_url = "http://localhost:8000",
+    split = "vertical",
   },
   codelens = {
     enabled = true,

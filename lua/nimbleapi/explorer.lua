@@ -138,6 +138,14 @@ function M.set_keymaps()
 		M.refresh()
 	end, opts)
 
+	vim.keymap.set("n", "t", function()
+		local cursor = vim.api.nvim_win_get_cursor(win)
+		local route = line_map[cursor[1]]
+		if route and route.method then
+			require("nimbleapi.http").test_route(route)
+		end
+	end, opts)
+
 	vim.keymap.set("n", "q", function()
 		M.close()
 	end, opts)
