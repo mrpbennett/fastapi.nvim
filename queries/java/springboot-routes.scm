@@ -48,3 +48,24 @@
         (#eq? @_method_key "method")
         (#eq? @http_method "RequestMapping"))))
   name: (identifier) @func_name) @route_def
+
+;; Pattern 5: @RequestMapping with both value=/path= AND method= (common legacy style)
+;; e.g., @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+;; e.g., @RequestMapping(value = "/{id}", method = RequestMethod.PATCH, consumes = {"application/json"})
+;; Captures both path and HTTP verb in a single match — no merge needed.
+(method_declaration
+  (modifiers
+    (annotation
+      name: (identifier) @http_method
+      arguments: (annotation_argument_list
+        (element_value_pair
+          key: (identifier) @_path_key
+          value: (string_literal) @route_path)
+        (element_value_pair
+          key: (identifier) @_method_key
+          value: (field_access
+            field: (identifier) @_request_method))
+        (#any-of? @_path_key "value" "path")
+        (#eq? @_method_key "method")
+        (#eq? @http_method "RequestMapping"))))
+  name: (identifier) @func_name) @route_def
