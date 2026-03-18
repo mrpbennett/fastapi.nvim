@@ -9,6 +9,16 @@ M.file_extensions = { "java" }
 M.test_patterns = { "*Test.java", "*Tests.java", "*IT.java", "src/test/**/*.java" }
 M.path_param_pattern = "{[^}]+}"
 
+--- Check if the Java tree-sitter parser is available.
+---@return { ok: boolean, message: string|nil }
+function M.check_prerequisites()
+  local ok = pcall(vim.treesitter.language.inspect, "java")
+  if not ok then
+    return { ok = false, message = "Java tree-sitter parser not installed. Run :TSInstall java" }
+  end
+  return { ok = true }
+end
+
 --- Annotation name -> HTTP method mapping.
 local ANNOTATION_METHODS = {
   GetMapping = "GET",
@@ -87,12 +97,6 @@ end
 ---@param root string
 ---@return boolean
 function M.detect(root)
-  -- Check Java TS parser availability
-  local ok = pcall(vim.treesitter.language.inspect, "java")
-  if not ok then
-    return false
-  end
-
   -- Check pom.xml for spring-boot-starter-web
   local pom = utils.join(root, "pom.xml")
   if utils.file_exists(pom) then

@@ -16,6 +16,9 @@ local subcommands = {
   codelens = function()
     require("fastapi").codelens()
   end,
+  info = function()
+    require("fastapi").info()
+  end,
 }
 
 vim.api.nvim_create_user_command("FastAPI", function(args)

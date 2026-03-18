@@ -72,6 +72,27 @@ function M.get_file_routes(filepath)
   return routes
 end
 
+--- Format a user-facing error when no provider is detected.
+---@param providers_mod table The providers module
+---@return string
+local function format_no_provider_message(providers_mod)
+  local diag = providers_mod.get_diagnostics()
+  local parts = { "fastapi.nvim: no supported framework detected in " .. vim.fn.getcwd() }
+
+  -- Check if any provider had prerequisite failures — those are actionable
+  for _, d in ipairs(diag) do
+    if d.phase == "prerequisites" then
+      table.insert(parts, d.provider .. ": " .. d.reason)
+    end
+  end
+
+  if #parts == 1 then
+    table.insert(parts, "Run :FastAPI info for details")
+  end
+
+  return table.concat(parts, "\n")
+end
+
 --- Build and cache the full route tree.
 ---@return table|nil AppDefinition
 function M.get_route_tree()
@@ -82,23 +103,27 @@ function M.get_route_tree()
   local providers = require("fastapi.providers")
   local provider = providers.get_provider()
 
-  if provider and provider.get_route_tree then
-    local root = provider.find_project_root()
-    tree_cache = provider.get_route_tree(root)
-    if not tree_cache then
-      vim.notify("fastapi.nvim: no app found in workspace (provider: " .. provider.name .. ")", vim.log.levels.WARN)
-    end
-    return tree_cache
-  end
-
-  -- Fallback for providers without get_route_tree
-  local app = require("fastapi.app_finder").find_app()
-  if not app then
-    vim.notify("fastapi.nvim: no FastAPI app found in workspace", vim.log.levels.WARN)
+  if not provider then
+    vim.notify(format_no_provider_message(providers), vim.log.levels.WARN)
     return nil
   end
 
-  tree_cache = require("fastapi.router_resolver").build_route_tree(app)
+  if not provider.get_route_tree then
+    vim.notify(
+      "fastapi.nvim: provider '" .. provider.name .. "' does not support route tree building",
+      vim.log.levels.ERROR
+    )
+    return nil
+  end
+
+  local root = provider.find_project_root()
+  tree_cache = provider.get_route_tree(root)
+  if not tree_cache then
+    vim.notify(
+      "fastapi.nvim: no app found in workspace (provider: " .. provider.name .. ")",
+      vim.log.levels.WARN
+    )
+  end
   return tree_cache
 end
 
@@ -112,27 +137,22 @@ function M.get_all_routes()
   local providers = require("fastapi.providers")
   local provider = providers.get_provider()
 
-  if provider then
-    local root = provider.find_project_root()
-    flat_cache = provider.get_all_routes(root)
-    if not flat_cache or #flat_cache == 0 then
-      -- Try via route tree for providers that build trees
-      local tree = M.get_route_tree()
-      if tree then
-        flat_cache = require("fastapi.router_resolver").flatten_routes(tree)
-      end
-    end
-    return flat_cache or {}
-  end
-
-  -- Fallback: original behavior
-  local tree = M.get_route_tree()
-  if not tree then
+  if not provider then
+    -- Trigger get_route_tree so the user sees the diagnostic message
+    M.get_route_tree()
     return {}
   end
 
-  flat_cache = require("fastapi.router_resolver").flatten_routes(tree)
-  return flat_cache
+  local root = provider.find_project_root()
+  flat_cache = provider.get_all_routes(root)
+  if not flat_cache or #flat_cache == 0 then
+    -- Try via route tree for providers that build trees
+    local tree = M.get_route_tree()
+    if tree then
+      flat_cache = require("fastapi.router_resolver").flatten_routes(tree)
+    end
+  end
+  return flat_cache or {}
 end
 
 --- Build a lookup table from path -> route for codelens matching.

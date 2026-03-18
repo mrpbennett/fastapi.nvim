@@ -8,6 +8,16 @@ M.file_extensions = { "py" }
 M.test_patterns = { "test_*.py", "*_test.py", "tests/**/*.py" }
 M.path_param_pattern = "{[^}]+}"
 
+--- Check if the Python tree-sitter parser is available.
+---@return { ok: boolean, message: string|nil }
+function M.check_prerequisites()
+  local ok = pcall(vim.treesitter.language.inspect, "python")
+  if not ok then
+    return { ok = false, message = "Python tree-sitter parser not installed. Run :TSInstall python" }
+  end
+  return { ok = true }
+end
+
 --- Detect if this is a FastAPI project.
 ---@param root string
 ---@return boolean

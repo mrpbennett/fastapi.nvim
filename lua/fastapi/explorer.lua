@@ -188,7 +188,17 @@ function M.render()
 	local highlights = {} -- { line_idx (0-based), col_start, col_end, hl_group }
 
 	if not all_routes or #all_routes == 0 then
-		lines = { " FastAPI Routes", string.rep("─", 38), "", "  No FastAPI app found.", "  Run :FastAPI refresh" }
+		local providers = require("fastapi.providers")
+		local provider = providers.get_provider()
+		local provider_name = provider and provider.name or "unknown"
+		lines = {
+			" Route Explorer",
+			string.rep("─", 38),
+			"",
+			"  No routes found.",
+			provider and ("  Provider: " .. provider_name) or "  No framework detected.",
+			"  Run :FastAPI info for details",
+		}
 		table.insert(highlights, { 0, 0, #lines[1], "FastapiTitle" })
 		table.insert(highlights, { 1, 0, #lines[2], "FastapiSeparator" })
 		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -216,8 +226,11 @@ function M.render()
 	end
 
 	-- Determine app file (first file in original order) for header
+	local providers = require("fastapi.providers")
+	local provider = providers.get_provider()
+	local provider_label = provider and provider.name or "routes"
 	local app_file = utils.basename(file_order[1] or "")
-	local title = " FastAPI App (" .. app_file .. ")"
+	local title = " " .. provider_label .. " (" .. app_file .. ")"
 	table.insert(lines, title)
 	table.insert(highlights, { 0, 0, #title, "FastapiTitle" })
 	local sep = string.rep("─", 38)

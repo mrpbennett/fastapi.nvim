@@ -5,8 +5,16 @@ function M.setup(opts)
   require("fastapi.config").setup(opts)
 
   -- Load providers (registers them with the provider registry)
-  require("fastapi.providers.fastapi")
-  require("fastapi.providers.springboot")
+  local providers_to_load = { "fastapi", "springboot" }
+  for _, name in ipairs(providers_to_load) do
+    local ok, err = pcall(require, "fastapi.providers." .. name)
+    if not ok then
+      vim.notify(
+        "fastapi.nvim: failed to load provider '" .. name .. "': " .. tostring(err),
+        vim.log.levels.WARN
+      )
+    end
+  end
 
   local config = require("fastapi.config").options
 
@@ -81,6 +89,11 @@ function M.codelens()
     codelens.detach(vim.api.nvim_get_current_buf())
     vim.notify("FastAPI codelens disabled", vim.log.levels.INFO)
   end
+end
+
+function M.info()
+  local lines = require("fastapi.providers").info()
+  vim.notify(table.concat(lines, "\n"), vim.log.levels.INFO)
 end
 
 --- Get all routes (flat list). Convenience for external consumers.
