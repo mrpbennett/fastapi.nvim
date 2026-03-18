@@ -16,12 +16,12 @@ A Neovim plugin for exploring, navigating, and testing API applications. Browse 
 
 | Framework | Language | Status |
 |-----------|----------|--------|
-| FastAPI | Python | Supported |
-| Spring / Spring Boot | Java | Supported |
-| Express.js | JavaScript / TypeScript | Planned |
-| Gin | Go | Planned |
-| Axum | Rust | Planned |
-| Ruby on Rails | Ruby | Planned |
+| FastAPI | 🐍 Python | 💚 Supported |
+| Spring / Spring Boot | ☕ Java | :green_heart: Supported |
+| Express.js | JavaScript / TypeScript | 🐢🐢 Planned |
+| Gin | 🐹 Go | 🐢 Planned |
+| Axum | 🦀 Rust | 🐢🐢🐢 Planned |
+| Ruby on Rails | 💎 Ruby | 🐢🐢🐢 Planned |
 
 ## Features
 
