@@ -269,8 +269,11 @@ function M.render(context_buf)
 		table.insert(highlights, { header_line_idx, 0, #header, "NimbleApiRouter" })
 
 		-- Route lines
+		local win_width = (win and vim.api.nvim_win_is_valid(win))
+			and vim.api.nvim_win_get_width(win)
+			or config.explorer.width
 		for _, route in ipairs(routes) do
-			M._render_route_line(lines, highlights, route, config)
+			M._render_route_line(lines, highlights, route, config, win_width)
 		end
 
 		-- Blank separator between groups (not after the last one)
@@ -299,7 +302,8 @@ end
 ---@param highlights table[]
 ---@param route table
 ---@param config table
-function M._render_route_line(lines, highlights, route, config)
+---@param win_width integer
+function M._render_route_line(lines, highlights, route, config, win_width)
 	local line_idx = #lines
 
 	local use_icons = config.explorer.icons
@@ -311,9 +315,18 @@ function M._render_route_line(lines, highlights, route, config)
 
 	local method_pad = method_str .. string.rep(" ", 9 - #method_str)
 	local path = route.path or "/"
-	local func_str = " → " .. (route.func or "?") .. "()"
+	local func_name = (route.func or "?") .. "()"
 
-	local line = "  " .. icon .. method_pad .. path .. func_str
+	-- Build left part (indent + icon + method + path) and right part (func name)
+	local left = "  " .. icon .. method_pad .. path
+	local left_len = #left
+	local right_len = #func_name
+	-- Pad between path and func_name so func_name is right-aligned to window edge
+	local gap = win_width - left_len - right_len
+	if gap < 2 then
+		gap = 2
+	end
+	local line = left .. string.rep(" ", gap) .. func_name
 	table.insert(lines, line)
 
 	-- Store line-to-route mapping (1-indexed)
@@ -328,7 +341,8 @@ function M._render_route_line(lines, highlights, route, config)
 	local path_end = path_start + #path
 	table.insert(highlights, { line_idx, path_start, path_end, "NimbleApiPath" })
 
-	table.insert(highlights, { line_idx, path_end, #line, "NimbleApiFunc" })
+	local func_start = left_len + gap
+	table.insert(highlights, { line_idx, func_start, func_start + right_len, "NimbleApiFunc" })
 end
 
 --- Apply highlight extmarks to the buffer.
