@@ -111,6 +111,7 @@ function M.detect(root)
 
   for _, provider in ipairs(registry) do
     -- Check prerequisites first (TS parser installed, etc.)
+    local prereq_ok = true
     if provider.check_prerequisites then
       local prereq = provider.check_prerequisites()
       if not prereq.ok then
@@ -119,29 +120,29 @@ function M.detect(root)
           phase = "prerequisites",
           reason = prereq.message or "prerequisites not met",
         })
-        goto continue
+        prereq_ok = false
       end
     end
 
-    -- Check if this project matches the provider
-    local ok, result = pcall(provider.detect, root)
-    if ok and result then
-      return provider, diagnostics
-    elseif not ok then
-      table.insert(diagnostics, {
-        provider = provider.name,
-        phase = "detection",
-        reason = "detect() error: " .. tostring(result),
-      })
-    elseif ok and not result then
-      table.insert(diagnostics, {
-        provider = provider.name,
-        phase = "detection",
-        reason = "project markers not found in " .. root,
-      })
+    if prereq_ok then
+      -- Check if this project matches the provider
+      local ok, result = pcall(provider.detect, root)
+      if ok and result then
+        return provider, diagnostics
+      elseif not ok then
+        table.insert(diagnostics, {
+          provider = provider.name,
+          phase = "detection",
+          reason = "detect() error: " .. tostring(result),
+        })
+      elseif ok and not result then
+        table.insert(diagnostics, {
+          provider = provider.name,
+          phase = "detection",
+          reason = "project markers not found in " .. root,
+        })
+      end
     end
-
-    ::continue::
   end
 
   return nil, diagnostics

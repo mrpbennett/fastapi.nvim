@@ -71,6 +71,29 @@ function M.setup(opts)
       vim.keymap.set("n", b[1], b[2], { desc = b[3] })
     end
   end
+
+  -- Kulala keymaps (buffer-local on ft=http, only if kulala is installed)
+  local kulala_ok = pcall(require, "kulala")
+  if kulala_ok then
+    local http_binds = {
+      { km.http_run,     function() require("kulala").run() end,              "Kulala: send request" },
+      { km.http_replay,  function() require("kulala").replay() end,           "Kulala: replay last request" },
+      { km.http_inspect, function() require("kulala").inspect() end,          "Kulala: inspect request" },
+      { km.http_env,     function() require("kulala").set_selected_env() end, "Kulala: set environment" },
+    }
+
+    vim.api.nvim_create_autocmd("FileType", {
+      group = vim.api.nvim_create_augroup("NimbleApiKulala", { clear = true }),
+      pattern = "http",
+      callback = function(ev)
+        for _, b in ipairs(http_binds) do
+          if b[1] then
+            vim.keymap.set("n", b[1], b[2], { buffer = ev.buf, desc = b[3] })
+          end
+        end
+      end,
+    })
+  end
 end
 
 function M.toggle()

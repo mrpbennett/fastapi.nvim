@@ -48,6 +48,8 @@ A Neovim plugin for exploring, navigating, and testing API applications. Browse 
   cmd = "NimbleAPI",
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
+    -- Optional: HTTP client for testing routes
+    -- "mistweaverco/kulala.nvim",
   },
   opts = {},
 }
@@ -76,6 +78,13 @@ require("nimbleapi").setup({
     pick     = "<leader>Np", -- open route picker
     refresh  = "<leader>Nr", -- refresh route cache
     codelens = "<leader>Nc", -- toggle codelens
+    test     = "<leader>Ne", -- test route under cursor
+
+    -- Kulala keymaps (buffer-local on .http files, requires kulala.nvim)
+    http_run     = "<leader>Ns", -- send request
+    http_replay  = "<leader>NR", -- replay last request
+    http_inspect = "<leader>Ni", -- inspect current request
+    http_env     = "<leader>NE", -- set environment
   },
 
   codelens = {
@@ -102,18 +111,33 @@ All commands are available under the `:NimbleAPI` prefix:
 | `:NimbleAPI pick` | Open the route picker |
 | `:NimbleAPI refresh` | Refresh the route cache |
 | `:NimbleAPI codelens` | Toggle CodeLens annotations |
+| `:NimbleAPI test` | Open HTTP test buffer for route under cursor |
 | `:NimbleAPI info` | Show provider status and diagnostics |
 
 ### Default Keymaps
 
 All keymaps are configurable. Set any keymap to `false` to disable it.
 
+| Keymap | Action | Scope |
+|--------|--------|-------|
+| `<leader>Nt` | Toggle explorer | Global |
+| `<leader>Np` | Open picker | Global |
+| `<leader>Nr` | Refresh routes | Global |
+| `<leader>Nc` | Toggle CodeLens | Global |
+| `<leader>Ne` | Test route under cursor | Global |
+
+### Kulala HTTP Keymaps
+
+When [kulala.nvim](https://github.com/mistweaverco/kulala.nvim) is installed, these keymaps are automatically bound **buffer-locally** in `.http` files. They are only active in HTTP buffers and won't pollute your normal keymap space.
+
 | Keymap | Action |
 |--------|--------|
-| `<leader>Nt` | Toggle explorer |
-| `<leader>Np` | Open picker |
-| `<leader>Nr` | Refresh routes |
-| `<leader>Nc` | Toggle CodeLens |
+| `<leader>Ns` | Send request |
+| `<leader>NR` | Replay last request |
+| `<leader>Ni` | Inspect current request |
+| `<leader>NE` | Set environment |
+
+All keymaps can be disabled individually by setting them to `false` in your config.
 
 ## Explorer Sidebar
 

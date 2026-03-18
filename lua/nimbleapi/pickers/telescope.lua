@@ -55,7 +55,7 @@ function M.pick(opts)
               return displayer({
                 { entry.method, method_hl },
                 { entry.path },
-                { entry.func .. "()", "NimbleApiFunc" },
+                { (entry.func or "?") .. "()", "NimbleApiFunc" },
               })
             end,
           }

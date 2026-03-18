@@ -30,7 +30,13 @@ function M.pick(opts)
     })
   end
 
-  Snacks.picker(vim.tbl_extend("force", {
+  local ok, snacks = pcall(require, "snacks")
+  if not ok or not snacks or not snacks.picker then
+    vim.notify("nimbleapi.nvim: snacks.nvim picker not available", vim.log.levels.ERROR)
+    return
+  end
+
+  snacks.picker(vim.tbl_extend("force", {
     title = "NimbleAPI Routes",
     items = items,
     format = function(item, _ctx)

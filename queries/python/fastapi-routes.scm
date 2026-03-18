@@ -39,3 +39,41 @@
       attribute: (identifier) @http_method))
   definition: (function_definition
     name: (identifier) @func_name)) @route_def
+
+;; Pattern 4: chained attribute object with positional path — @v1.router.get("/path")
+(decorated_definition
+  (decorator
+    (call
+      function: (attribute
+        object: (attribute) @router_obj
+        attribute: (identifier) @http_method)
+      arguments: (argument_list
+        (string
+          (string_content) @route_path))))
+  definition: (function_definition
+    name: (identifier) @func_name)) @route_def
+
+;; Pattern 5: chained attribute object with keyword path — @v1.router.get(path="/path")
+(decorated_definition
+  (decorator
+    (call
+      function: (attribute
+        object: (attribute) @router_obj
+        attribute: (identifier) @http_method)
+      arguments: (argument_list
+        (keyword_argument
+          name: (identifier) @_path_key
+          value: (string
+            (string_content) @route_path))
+        (#eq? @_path_key "path"))))
+  definition: (function_definition
+    name: (identifier) @func_name)) @route_def
+
+;; Pattern 6: chained attribute object, no-argument — @v1.router.get
+(decorated_definition
+  (decorator
+    (attribute
+      object: (attribute) @router_obj
+      attribute: (identifier) @http_method))
+  definition: (function_definition
+    name: (identifier) @func_name)) @route_def

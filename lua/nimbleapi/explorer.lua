@@ -266,30 +266,28 @@ function M.render(context_buf)
 	end)
 
 	for gi, filepath in ipairs(show_files) do
-		local routes = groups[filepath]
-		if not routes then goto continue end
+		local file_routes = groups[filepath]
+		if file_routes then
+			-- File header line
+			local header = " " .. utils.basename(filepath)
+			local header_line_idx = #lines
+			table.insert(lines, header)
+			line_map[header_line_idx + 1] = { file = filepath, line = 1 }
+			table.insert(highlights, { header_line_idx, 0, #header, "NimbleApiRouter" })
 
-		-- File header line
-		local header = " " .. utils.basename(filepath)
-		local header_line_idx = #lines
-		table.insert(lines, header)
-		line_map[header_line_idx + 1] = { file = filepath, line = 1 }
-		table.insert(highlights, { header_line_idx, 0, #header, "NimbleApiRouter" })
+			-- Route lines
+			local win_width = (win and vim.api.nvim_win_is_valid(win))
+				and vim.api.nvim_win_get_width(win)
+				or config.explorer.width
+			for _, route in ipairs(file_routes) do
+				M._render_route_line(lines, highlights, route, config, win_width)
+			end
 
-		-- Route lines
-		local win_width = (win and vim.api.nvim_win_is_valid(win))
-			and vim.api.nvim_win_get_width(win)
-			or config.explorer.width
-		for _, route in ipairs(routes) do
-			M._render_route_line(lines, highlights, route, config, win_width)
+			-- Blank separator between groups (not after the last one)
+			if gi < #show_files then
+				table.insert(lines, "")
+			end
 		end
-
-		-- Blank separator between groups (not after the last one)
-		if gi < #show_files then
-			table.insert(lines, "")
-		end
-
-		::continue::
 	end
 
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)

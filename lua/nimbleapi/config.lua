@@ -15,6 +15,10 @@ local M = {}
 ---@field refresh string|false
 ---@field codelens string|false
 ---@field test string|false
+---@field http_run string|false
+---@field http_replay string|false
+---@field http_inspect string|false
+---@field http_env string|false
 
 ---@class NimbleApiCodelensConfig
 ---@field enabled boolean
@@ -54,6 +58,11 @@ M.defaults = {
     refresh  = "<leader>Nr",
     codelens = "<leader>Nc",
     test     = "<leader>Ne",
+    -- kulala actions (buffer-local on ft=http)
+    http_run     = "<leader>Ns",
+    http_replay  = "<leader>NR",
+    http_inspect = "<leader>Ni",
+    http_env     = "<leader>NE",
   },
   http = {
     base_url = "http://localhost:8000",
