@@ -55,7 +55,11 @@ function M.picker(opts)
 		confirm = function(picker, item)
 			picker:close()
 			if item then
-				vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+				local ok, err = pcall(vim.cmd, "edit " .. vim.fn.fnameescape(item.file))
+				if not ok then
+					vim.notify("nimbleapi.nvim: could not open " .. item.file .. ": " .. tostring(err), vim.log.levels.ERROR)
+					return
+				end
 				vim.api.nvim_win_set_cursor(0, item.pos)
 				vim.cmd("normal! zz")
 			end

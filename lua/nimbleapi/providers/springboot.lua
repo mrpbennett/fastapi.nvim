@@ -175,7 +175,7 @@ function M._extract_apps(filepath)
     local app = { file = filepath }
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = parser.unwrap_node(nodes)
       if name == "app_class" then
         app.class_name = parser.get_text(node, source)
         app.line = node:range() + 1
@@ -207,7 +207,7 @@ local function extract_class_prefix(root_node, source)
     local class_name = nil
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = parser.unwrap_node(nodes)
       if name == "class_prefix" then
         prefix = strip_quotes(parser.get_text(node, source))
       elseif name == "class_name" then
@@ -255,7 +255,7 @@ function M.extract_routes(filepath)
 
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = parser.unwrap_node(nodes)
       local text = parser.get_text(node, source)
 
       if name == "http_method" then
@@ -386,7 +386,7 @@ end
 ---@param bufnr integer
 ---@return table[]
 function M.extract_test_calls_buf(bufnr)
-  local root_node, buf = parser.parse_buffer(bufnr, "java")
+  local root_node, src = parser.parse_buffer(bufnr, "java")
   if not root_node then
     return {}
   end
@@ -399,12 +399,12 @@ function M.extract_test_calls_buf(bufnr)
   end
 
   local calls = {}
-  for _, match, _ in query:iter_matches(root_node, buf, 0, -1) do
+  for _, match, _ in query:iter_matches(root_node, src, 0, -1) do
     local call = { file = filepath }
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
-      local text = parser.get_text(node, buf)
+      local node = parser.unwrap_node(nodes)
+      local text = parser.get_text(node, src)
 
       if name == "client_var" then
         call.client_var = text

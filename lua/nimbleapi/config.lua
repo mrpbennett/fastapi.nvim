@@ -14,6 +14,7 @@ local M = {}
 ---@field picker string|false
 ---@field refresh string|false
 ---@field codelens string|false
+---@field codelens_jump string|false  -- jump to route definition from a test file (avoids shadowing gd)
 ---@field test string|false
 ---@field http_run string|false
 ---@field http_replay string|false
@@ -57,6 +58,7 @@ M.defaults = {
 		picker = "<leader>Np",
 		refresh = "<leader>Nr",
 		codelens = "<leader>Nc",
+		codelens_jump = "<leader>Nj",
 		test = "<leader>Nt",
 		-- kulala actions (buffer-local on ft=http)
 		http_run = "<leader>Ns",

@@ -91,7 +91,7 @@ function M.attach(bufnr)
     if #matches > 0 then
       local route = matches[1]
       local rel_file = vim.fn.fnamemodify(route.file, ":t")
-      local annotation = route.func .. "()  " .. rel_file .. ":" .. route.line
+      local annotation = (route.func or "?") .. "()  " .. rel_file .. ":" .. tostring(route.line or "?")
 
       local id = vim.api.nvim_buf_set_extmark(bufnr, ns, call.line - 1, 0, {
         virt_text = {
@@ -107,16 +107,21 @@ function M.attach(bufnr)
     end
   end
 
-  -- Set up buffer-local keymap for jumping to route definition
+  -- Set up buffer-local keymap for jumping to route definition.
+  -- Uses config.keymaps.codelens_jump (default <leader>Nj) to avoid shadowing gd.
   if not vim.b[bufnr].nimbleapi_codelens_keymap then
-    vim.keymap.set("n", "gd", function()
-      M.jump_to_route(bufnr)
-    end, {
-      buffer = bufnr,
-      noremap = true,
-      silent = true,
-      desc = "Jump to NimbleAPI route definition",
-    })
+    local km = require("nimbleapi.config").options.keymaps
+    local jump_key = km and km.codelens_jump
+    if jump_key then
+      vim.keymap.set("n", jump_key, function()
+        M.jump_to_route(bufnr)
+      end, {
+        buffer = bufnr,
+        noremap = true,
+        silent = true,
+        desc = "NimbleAPI: jump to route definition",
+      })
+    end
     vim.b[bufnr].nimbleapi_codelens_keymap = true
   end
 end
@@ -172,8 +177,12 @@ function M.jump_to_route(bufnr)
   if #marks > 0 then
     local route = extmark_data[marks[1][1]]
     if route and route.file then
-      vim.cmd("edit " .. vim.fn.fnameescape(route.file))
-      vim.api.nvim_win_set_cursor(0, { route.line, 0 })
+      local ok, err = pcall(vim.cmd, "edit " .. vim.fn.fnameescape(route.file))
+      if not ok then
+        vim.notify("nimbleapi.nvim: could not open " .. route.file .. ": " .. tostring(err), vim.log.levels.ERROR)
+        return
+      end
+      vim.api.nvim_win_set_cursor(0, { route.line or 1, 0 })
       vim.cmd("normal! zz")
     end
   end

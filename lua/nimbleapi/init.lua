@@ -14,8 +14,9 @@ function M.setup(opts)
 	_did_setup = true
 	require("nimbleapi.config").setup(opts)
 
-	-- Load providers (registers them with the provider registry)
-	local providers_to_load = { "chi", "echo", "express", "fastapi", "gin", "springboot", "stdlib" }
+	-- Load providers (registers them with the provider registry).
+	-- Only list providers whose files actually exist; planned providers are added here once implemented.
+	local providers_to_load = { "fastapi", "springboot" }
 	for _, name in ipairs(providers_to_load) do
 		local ok, err = pcall(require, "nimbleapi.providers." .. name)
 		if not ok then
@@ -54,10 +55,10 @@ function M.setup(opts)
 	if config.picker.keymap then
 		vim.keymap.set("n", config.picker.keymap, function()
 			M.picker()
-		end, { desc = "NimbleAPI: route picker" })
+		end, { silent = true, desc = "NimbleAPI: route picker" })
 	end
 
-	-- <leader>F* keymaps
+	-- <leader>N* global keymaps
 	local km = config.keymaps or {}
 	local binds = {
 		{
@@ -98,7 +99,7 @@ function M.setup(opts)
 	}
 	for _, b in ipairs(binds) do
 		if b[1] then
-			vim.keymap.set("n", b[1], b[2], { desc = b[3] })
+			vim.keymap.set("n", b[1], b[2], { silent = true, desc = b[3] })
 		end
 	end
 
