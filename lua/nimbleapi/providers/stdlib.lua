@@ -105,11 +105,38 @@ function M.detect(root)
   return false
 end
 
---- Find the app entry point (stub — full implementation in a later phase).
+--- Find the stdlib server entry point.
+--- Looks for http.NewServeMux(), mux.New(), or server initialization.
 ---@param root string
----@return table|nil
+---@return table|nil app { file, var_name, line }
 function M.find_app(root)
-  return nil
+	local go_files = require("nimbleapi.utils").glob_files(root, "**/*.go", {
+		"vendor", "testdata", "node_modules", ".git",
+	})
+
+	for _, f in ipairs(go_files) do
+		local rel = require("nimbleapi.utils").relative(f, root)
+		if rel:match("^tests?/") or rel:match("^test_") then
+			goto continue
+		end
+
+		local content = require("nimbleapi.utils").read_file(f)
+		if content and (content:find("http%.NewServeMux()") or content:find("mux%.New()") or content:find("server = &http%.Server")) then
+			local lines = vim.split(content, "\n")
+			for i, line in ipairs(lines) do
+				if line:match("http%.NewServeMux()") or line:match("mux%.New()") or line:match("server = &http%.Server") then
+					return {
+						file = f,
+						var_name = "server",
+						line = i,
+					}
+				end
+			end
+		end
+		::continue::
+	end
+
+	return nil
 end
 
 --- Extract routes from a single Go file using stdlib-routes.scm query.

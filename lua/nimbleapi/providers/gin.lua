@@ -91,10 +91,38 @@ function M.detect(root)
 	return false
 end
 
---- Find the app entry point (stub — Gin does not need an entry point for route scanning).
+--- Find the Gin app entry point.
+--- Looks for gin.New(), gin.Default(), or echo.New() patterns.
 ---@param root string
----@return table|nil
+---@return table|nil app { file, var_name, line }
 function M.find_app(root)
+	local go_files = require("nimbleapi.utils").glob_files(root, "**/*.go", {
+		"vendor", "testdata", "node_modules", ".git",
+	})
+
+	for _, f in ipairs(go_files) do
+		local rel = require("nimbleapi.utils").relative(f, root)
+		if rel:match("^tests?/") or rel:match("^test_") then
+			goto continue
+		end
+
+		local content = require("nimbleapi.utils").read_file(f)
+		if content and (content:find("gin%.New()") or content:find("gin%.Default()")) then
+			-- Parse the file to find the exact line
+			local lines = vim.split(content, "\n")
+			for i, line in ipairs(lines) do
+				if line:match("gin%.New()") or line:match("gin%.Default()") then
+					return {
+						file = f,
+						var_name = "ginApp",
+						line = i,
+					}
+				end
+			end
+		end
+		::continue::
+	end
+
 	return nil
 end
 

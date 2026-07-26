@@ -16,7 +16,7 @@ function M.setup(opts)
 
 	-- Load providers (registers them with the provider registry).
 	-- Only list providers whose files actually exist; planned providers are added here once implemented.
-	local providers_to_load = { "fastapi", "springboot" }
+	local providers_to_load = { "fastapi", "springboot", "gin", "echo", "chi", "stdlib" }
 	for _, name in ipairs(providers_to_load) do
 		local ok, err = pcall(require, "nimbleapi.providers." .. name)
 		if not ok then
