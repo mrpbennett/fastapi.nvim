@@ -22,7 +22,11 @@ function M.picker(opts)
       return
     end
     local route = routes[idx]
-    vim.cmd("edit " .. vim.fn.fnameescape(route.file))
+    local ok, err = pcall(vim.cmd, "edit " .. vim.fn.fnameescape(route.file))
+    if not ok then
+      vim.notify("nimbleapi.nvim: could not open " .. route.file .. ": " .. tostring(err), vim.log.levels.ERROR)
+      return
+    end
     vim.api.nvim_win_set_cursor(0, { route.line, 0 })
     vim.cmd("normal! zz")
   end)

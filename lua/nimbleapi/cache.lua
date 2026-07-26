@@ -150,20 +150,26 @@ function M.get_all_routes(ctx)
   end
 
   local all_routes = {}
+  local single_provider = #active_list == 1
   for _, provider in ipairs(active_list) do
     local project_root = provider.find_project_root(root)
     local routes = provider.get_all_routes(project_root)
     if routes and #routes > 0 then
       vim.list_extend(all_routes, routes)
-    else
-      -- Try via route tree for providers that build trees
-      if provider.get_route_tree then
-        local tree = provider.get_route_tree(project_root)
-        if tree then
-          local tree_routes = require("nimbleapi.router_resolver").flatten_routes(tree)
-          if tree_routes then
-            vim.list_extend(all_routes, tree_routes)
-          end
+    elseif provider.get_route_tree then
+      -- For a single-provider project route through M.get_route_tree so tree_cache is populated.
+      -- For multi-provider projects call the provider directly (tree_cache is root-keyed, not
+      -- provider-keyed, so mixing multiple trees there would be incorrect).
+      local tree
+      if single_provider then
+        tree = M.get_route_tree(ctx)
+      else
+        tree = provider.get_route_tree(project_root)
+      end
+      if tree then
+        local tree_routes = require("nimbleapi.router_resolver").flatten_routes(tree)
+        if tree_routes then
+          vim.list_extend(all_routes, tree_routes)
         end
       end
     end

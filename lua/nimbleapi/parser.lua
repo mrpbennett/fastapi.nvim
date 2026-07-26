@@ -54,7 +54,14 @@ local function get_query(name, language)
     return nil
   end
 
-  local query = vim.treesitter.query.parse(language, content)
+  local ok, query = pcall(vim.treesitter.query.parse, language, content)
+  if not ok then
+    vim.notify(
+      "nimbleapi.nvim: failed to parse query " .. name .. " (" .. language .. "): " .. tostring(query),
+      vim.log.levels.ERROR
+    )
+    return nil
+  end
   query_cache[cache_key] = query
   return query
 end
@@ -99,6 +106,14 @@ function M.parse_buffer(bufnr, language)
   end
 
   return trees[1]:root(), bufnr
+end
+
+--- Unwrap a node capture from iter_matches.
+--- Neovim ≥0.10 returns a list of nodes per capture; ≤0.9 returns a single node.
+---@param nodes TSNode|TSNode[]
+---@return TSNode
+local function unwrap_node(nodes)
+  return type(nodes) == "table" and nodes[1] or nodes
 end
 
 --- Get text from a node, handling both string source and buffer source.
@@ -150,7 +165,7 @@ function M._extract_routes_from_tree(root, source, filepath)
     for id, nodes in pairs(match) do
       local name = query.captures[id]
       -- iter_matches returns lists of nodes in Neovim 0.10+
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = unwrap_node(nodes)
       if name == "router_obj" then
         route.router_obj = get_text(node, source)
       elseif name == "http_method" then
@@ -197,7 +212,7 @@ function M.extract_fastapi_apps(filepath)
     local app = { file = filepath }
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = unwrap_node(nodes)
       if name == "app_var" then
         app.var_name = get_text(node, source)
         app.line = node:range() + 1
@@ -237,7 +252,7 @@ function M._extract_includes_from_tree(root, source, filepath)
     local inc = { file = filepath }
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = unwrap_node(nodes)
       if name == "app_var" then
         inc.app_var = get_text(node, source)
       elseif name == "router_module" then
@@ -346,7 +361,7 @@ function M._extract_imports_from_tree(root, source, filepath)
     local capture_names = {}
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = unwrap_node(nodes)
       capture_names[name] = get_text(node, source)
 
       -- Count dots for relative import prefix
@@ -467,7 +482,7 @@ function M._extract_test_calls_from_tree(root, source, filepath)
     local call = { file = filepath }
     for id, nodes in pairs(match) do
       local name = query.captures[id]
-      local node = type(nodes) == "table" and nodes[1] or nodes
+      local node = unwrap_node(nodes)
       if name == "client_var" then
         call.client_var = get_text(node, source)
       elseif name == "http_method" then
@@ -505,6 +520,14 @@ end
 ---@return vim.treesitter.Query|nil
 function M.get_query_public(name, language)
   return get_query(name, language)
+end
+
+--- Public accessor for unwrap_node (used by providers that run their own queries).
+--- Handles the Neovim ≥0.10 iter_matches API change where captures are lists.
+---@param nodes TSNode|TSNode[]
+---@return TSNode
+function M.unwrap_node(nodes)
+  return unwrap_node(nodes)
 end
 
 return M

@@ -1,15 +1,21 @@
 local M = {}
 
---- Detect which picker backend to use.
+local _detected_backend = nil
+
+--- Detect which picker backend to use (result is memoized).
 ---@return "telescope"|"snacks"|"builtin"
 local function detect_provider()
+  if _detected_backend then
+    return _detected_backend
+  end
   if pcall(require, "snacks.picker") then
-    return "snacks"
+    _detected_backend = "snacks"
+  elseif pcall(require, "telescope") then
+    _detected_backend = "telescope"
+  else
+    _detected_backend = "builtin"
   end
-  if pcall(require, "telescope") then
-    return "telescope"
-  end
-  return "builtin"
+  return _detected_backend
 end
 
 --- Open a picker for routes.

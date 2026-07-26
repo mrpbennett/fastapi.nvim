@@ -125,11 +125,38 @@ function M.detect(root)
   return false
 end
 
---- Find the app entry point (stub — Chi does not need an entry point for route scanning).
+--- Find the Chi router entry point.
+--- Looks for chi.NewRouter(), chi.New(), or routers.New() patterns.
 ---@param root string
----@return table|nil
+---@return table|nil app { file, var_name, line }
 function M.find_app(root)
-  return nil
+	local go_files = require("nimbleapi.utils").glob_files(root, "**/*.go", {
+		"vendor", "testdata", "node_modules", ".git",
+	})
+
+	for _, f in ipairs(go_files) do
+		local rel = require("nimbleapi.utils").relative(f, root)
+		if rel:match("^tests?/") or rel:match("^test_") then
+			goto continue
+		end
+
+		local content = require("nimbleapi.utils").read_file(f)
+		if content and (content:find("chi%.NewRouter()") or content:find("chi%.New()") or content:find("routers%.New()")) then
+			local lines = vim.split(content, "\n")
+			for i, line in ipairs(lines) do
+				if line:match("chi%.NewRouter()") or line:match("chi%.New()") or line:match("routers%.New()") then
+					return {
+						file = f,
+						var_name = "router",
+						line = i,
+					}
+				end
+			end
+		end
+		::continue::
+	end
+
+	return nil
 end
 
 --- Extract routes from a single Go file.

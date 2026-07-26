@@ -107,15 +107,17 @@ function M.registered_names()
   return vim.tbl_map(function(p) return p.name end, registry)
 end
 
---- Detect which provider matches the current project, collecting diagnostics.
+--- Shared detection loop: check prerequisites then run provider.detect for each registered provider.
+--- When collect_all=false returns on first match (used by detect()); when true collects all matches.
 ---@param root string
----@return RouteProvider|nil provider
+---@param collect_all boolean
+---@return RouteProvider[]|RouteProvider|nil matches_or_first
 ---@return table[] diagnostics
-function M.detect(root)
+local function run_detection(root, collect_all)
   local diagnostics = {}
+  local matches = {}
 
   for _, provider in ipairs(registry) do
-    -- Check prerequisites first (TS parser installed, etc.)
     local prereq_ok = true
     if provider.check_prerequisites then
       local prereq = provider.check_prerequisites()
@@ -130,17 +132,20 @@ function M.detect(root)
     end
 
     if prereq_ok then
-      -- Check if this project matches the provider
       local ok, result = pcall(provider.detect, root)
       if ok and result then
-        return provider, diagnostics
+        if collect_all then
+          table.insert(matches, provider)
+        else
+          return provider, diagnostics
+        end
       elseif not ok then
         table.insert(diagnostics, {
           provider = provider.name,
           phase = "detection",
           reason = "detect() error: " .. tostring(result),
         })
-      elseif ok and not result then
+      elseif not collect_all then
         table.insert(diagnostics, {
           provider = provider.name,
           phase = "detection",
@@ -150,7 +155,18 @@ function M.detect(root)
     end
   end
 
+  if collect_all then
+    return matches, diagnostics
+  end
   return nil, diagnostics
+end
+
+--- Detect which provider matches the current project, collecting diagnostics.
+---@param root string
+---@return RouteProvider|nil provider
+---@return table[] diagnostics
+function M.detect(root)
+  return run_detection(root, false)
 end
 
 --- Get the active provider (cached, keyed on resolved project root).
@@ -210,7 +226,7 @@ function M.get_active_list(ctx)
   local matches = {}
 
   if config.provider then
-    -- User override: find matching providers by name prefix
+    -- User override: find matching providers by name or name prefix (e.g. "express" matches "express-ts")
     for _, provider in ipairs(registry) do
       if provider.name == config.provider
         or provider.name:match("^" .. vim.pesc(config.provider) .. "%-") then
@@ -219,34 +235,9 @@ function M.get_active_list(ctx)
     end
     diagnostics_cache[root] = {}
   else
-    -- Auto-detect: collect ALL matching providers
-    local diagnostics = {}
-    for _, provider in ipairs(registry) do
-      local prereq_ok = true
-      if provider.check_prerequisites then
-        local prereq = provider.check_prerequisites()
-        if not prereq.ok then
-          table.insert(diagnostics, {
-            provider = provider.name,
-            phase = "prerequisites",
-            reason = prereq.message or "prerequisites not met",
-          })
-          prereq_ok = false
-        end
-      end
-      if prereq_ok then
-        local ok, result = pcall(provider.detect, root)
-        if ok and result then
-          table.insert(matches, provider)
-        elseif not ok then
-          table.insert(diagnostics, {
-            provider = provider.name,
-            phase = "detection",
-            reason = "detect() error: " .. tostring(result),
-          })
-        end
-      end
-    end
+    -- Auto-detect: collect ALL matching providers via shared helper
+    local detected, diagnostics = run_detection(root, true)
+    matches = detected
     diagnostics_cache[root] = diagnostics
   end
 

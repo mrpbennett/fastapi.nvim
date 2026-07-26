@@ -170,7 +170,11 @@ function M.jump_to_route(split_cmd)
 		vim.cmd(split_cmd)
 	end
 
-	vim.cmd("edit " .. vim.fn.fnameescape(route.file))
+	local ok, err = pcall(vim.cmd, "edit " .. vim.fn.fnameescape(route.file))
+	if not ok then
+		vim.notify("nimbleapi.nvim: could not open " .. route.file .. ": " .. tostring(err), vim.log.levels.ERROR)
+		return
+	end
 	if route.line then
 		vim.api.nvim_win_set_cursor(0, { route.line, 0 })
 		vim.cmd("normal! zz")

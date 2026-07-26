@@ -35,9 +35,11 @@ vim.api.nvim_create_user_command("NimbleAPI", function(args)
 end, {
 	nargs = 1,
 	complete = function(lead)
-		return vim.tbl_filter(function(key)
+		local matches = vim.tbl_filter(function(key)
 			return key:find(lead, 1, true) == 1
 		end, vim.tbl_keys(subcommands))
+		table.sort(matches)
+		return matches
 	end,
 	desc = "NimbleAPI route explorer",
 })
@@ -78,16 +80,21 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 		local delay = config.options.watch.debounce_ms or 200
 		if debounce_timer then
 			debounce_timer:stop()
+			debounce_timer:close()
+			debounce_timer = nil
 		end
-		debounce_timer = vim.defer_fn(function()
+		debounce_timer = vim.uv.new_timer()
+		debounce_timer:start(delay, 0, vim.schedule_wrap(function()
+			debounce_timer:stop()
+			debounce_timer:close()
+			debounce_timer = nil
 			if explorer and explorer.is_open() then
 				require("nimbleapi").refresh()
 			end
 			if codelens and config.options.codelens.enabled then
 				codelens.refresh_current()
 			end
-			debounce_timer = nil
-		end, delay)
+		end))
 	end,
 	desc = "Refresh routes on source file save",
 })
@@ -123,13 +130,18 @@ vim.api.nvim_create_autocmd("BufEnter", {
 	desc = "Attach codelens in test files",
 })
 
--- Cleanup sidebar state on buffer wipeout
+-- Cleanup sidebar and codelens state on buffer wipeout
 vim.api.nvim_create_autocmd("BufWipeout", {
 	group = group,
 	callback = function(ev)
 		local explorer = package.loaded["nimbleapi.explorer"]
 		if explorer and ev.buf == explorer.get_buf() then
 			explorer.on_buf_wipeout()
+		end
+		-- Clean up codelens extmark data and attached_bufs for any wiped buffer
+		local codelens = package.loaded["nimbleapi.codelens"]
+		if codelens then
+			codelens.detach(ev.buf)
 		end
 	end,
 })

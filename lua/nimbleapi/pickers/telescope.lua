@@ -70,7 +70,11 @@ function M.picker(opts)
           actions.close(prompt_bufnr)
           local selection = action_state.get_selected_entry()
           if selection then
-            vim.cmd("edit " .. vim.fn.fnameescape(selection.path))
+            local ok, err = pcall(vim.cmd, "edit " .. vim.fn.fnameescape(selection.path))
+            if not ok then
+              vim.notify("nimbleapi.nvim: could not open " .. selection.path .. ": " .. tostring(err), vim.log.levels.ERROR)
+              return
+            end
             vim.api.nvim_win_set_cursor(0, { selection.lnum, 0 })
             vim.cmd("normal! zz")
           end
